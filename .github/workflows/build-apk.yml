@@ -9,9 +9,6 @@ on:
       - main
   workflow_dispatch:
 
-env:
-  SUBDIR: Lakshya-Khaki-v45 # Replace with your exact root subfolder name if different
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -28,14 +25,12 @@ jobs:
 
       - name: Grant Execute Permission for Gradlew
         run: chmod +x gradlew
-        working-directory: ${{ env.SUBDIR }}
 
       - name: Build Debug APK
         run: ./gradlew assembleDebug --no-daemon
-        working-directory: ${{ env.SUBDIR }}
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
-          path: ${{ env.SUBDIR }}/app/build/outputs/apk/debug/app-debug.apk
+          path: app/build/outputs/apk/debug/app-debug.apk
