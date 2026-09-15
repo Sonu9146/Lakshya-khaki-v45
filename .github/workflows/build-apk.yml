@@ -1,10 +1,7 @@
-name: Build Android APK
+name: Build Lakshya Khaki V45
 
 on:
   push:
-    branches:
-      - main
-  pull_request:
     branches:
       - main
   workflow_dispatch:
@@ -17,17 +14,34 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Locate Project Root
-        id: locate
+      - name: Extract V45 Project
         run: |
-          SETTINGS_FILE=$(find . -name "settings.gradle.kts" -o -name "settings.gradle" | head -n 1)
+          set -e
+
+          rm -rf .tmp_extract
+          mkdir -p .tmp_extract
+
+          unzip -q LakshyaKhaki_Native_v45_COMPLETE.zip -d .tmp_extract
+
+          SETTINGS_FILE=$(find .tmp_extract -type f \( -name "settings.gradle.kts" -o -name "settings.gradle" \) -print -quit)
+
           if [ -z "$SETTINGS_FILE" ]; then
-            echo "Error: settings.gradle file not found in repository."
+            echo "Error: Gradle settings file not found inside ZIP."
             exit 1
           fi
+
           PROJECT_DIR=$(dirname "$SETTINGS_FILE")
-          echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
-          echo "Detected project root at: $PROJECT_DIR"
+
+          echo "Project root: $PROJECT_DIR"
+
+          cp -a "$PROJECT_DIR"/. ./
+
+          rm -rf .tmp_extract
+
+          test -f gradlew
+          test -d app
+
+          echo "Project extracted successfully."
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -35,20 +49,15 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Setup Gradle Wrapper
-        run: gradle wrapper
-        working-directory: ${{ env.PROJECT_DIR }}
-
       - name: Make Gradlew Executable
         run: chmod +x gradlew
-        working-directory: ${{ env.PROJECT_DIR }}
 
       - name: Build Debug APK
-        run: ./gradlew assembleDebug --no-daemon
-        working-directory: ${{ env.PROJECT_DIR }}
+        run: ./gradlew :app:assembleDebug --no-daemon --stacktrace
 
-      - name: Upload APK Artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug
-          path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/debug/*.apk
+          name: LakshyaKhaki-V45-Debug-APK
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
